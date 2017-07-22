@@ -9,20 +9,30 @@ class Input extends React.Component {
     }
 
     handleInput = this.handleInput.bind(this);
+    handleSubmit = this.handleSubmit.bind(this);
 
     handleInput(event) {
-        this.props.getData(event.target.value);
+        this.props.getTitles(event.target.value);
+    }
+
+    handleSubmit(event) {
+        event.preventDefault();
+        this.props.submitSearch(this.input.value);
     }
 
     render() {
         return(
-            <input type='text' onInput={this.handleInput} placeholder="Search"></input>
-        )
+            <form onSubmit={this.handleSubmit}>
+                <input type='text' ref={(input) => this.input = input} onInput={this.handleInput} placeholder="Search"></input>
+                <input type='submit' value='Submit'></input>
+            </form>
+        );
     }
     
 }
 
 const Suggestions = (props) => {
+
     return(
         <div>
             <ul>
@@ -32,27 +42,50 @@ const Suggestions = (props) => {
     )
 };
 
-const Button = (props) => {
-    return(
-        <button>Search</button>
-    )
+const Results = (props) => {
+
+    if (props.submit) {
+        return(
+            <div>
+                {props.searchResults.map((result) => {
+                        const url = "http://www.wikipedia.org/wiki/" + result.title;
+                        return <a href={url} target='_blank'>
+                            <div>
+                                <h1>{result.title}</h1>
+                                <p dangerouslySetInnerHTML={{__html: result.snippet}}></p>
+                            </div>
+                        </a>
+                })}
+            </div>
+        )
+    }
+    else {
+        return null;
+    }
+
 }
 
-const Results = (props) => {
+const Article = (props) => {
+
     return(
-        <div>
-        </div>
+        <div dangerouslySetInnerHTML={{__html : props.article}} />
     )
+
 }
 
 
 class Wiki extends React.Component {
 
     state = {
-        searchResults : []
+        searchResults : [],
+        requestTime : 0,
+        submit : false,
+        article : ''
     }
 
-    getData = (input) => {
+    // Gets list of articles for search suggestions
+    getTitles = (input) => {
+        let time = Date.now();
         if (input) {
             $.ajax({
 
@@ -66,25 +99,81 @@ class Wiki extends React.Component {
                     'limit' : 20
                 },
                 'success' : (data) => {
-                    this.setState(prevState => ({
-                        searchResults : data.query.search
+                    if (time > this.state.requestTime) {
+                        this.setState(prevState => ({
+                        searchResults : data.query.search,
+                        requestTime : time
                     }))
+                    }
                 }
             });
         }
         else {
-            this.setState(prevState => ({
-                searchResults : []
-            }))
+            if (time > this.state.requestTime) {
+                this.state = {
+                    searchResults : [],
+                    requestTime : 0
+                }
+            }
         }
+    }
+
+    // onChange = (input) => {
+    
+    // }
+
+    submitSearch = (input) => {
+        this.setState(prevState => ({
+            submit : true
+        }), () => {
+            this.getTitles(input);
+        })
+    }
+
+    // getArticle = (input) => {
+    //     if (input) {
+    //         $.ajax({
+    //             'url' : 'https://en.wikipedia.org/w/api.php',
+    //             'data' : {
+    //                 'action' : 'query',
+    //                 'format' : 'json',
+    //                 'origin' : '*',
+    //                 'titles' : input,
+    //                 'prop' : 'revisions',
+    //                 'rvprop' : 'content'
+    //             },
+    //             'success' : (data) => {
+    //                 this.setState(prevState => ({
+    //                     article : data.query.pages[Object.keys(data.query.pages)[0]].revisions[0]['*']
+    //                 }))
+    //             }
+    //         })
+    //     }
+    // }
+
+    removeCharacters = (string) => {
+        const characters = {
+            " " : '%20',
+            '"' : '%22',
+            '%' : '%25',
+            '-' : '%2D',
+            '.' : '%2E',
+        };
+        let newString = Object.keys(characters).forEach((key) => {
+            let regEx = new RegExp(key, 'g');
+            let str = str.replace(regEx, characters.key);
+            return str;
+        });
+        return newString;
     }
 
     render() {
         return(
             <div>
-                <Input getData={this.getData} />
-                <Button />
+                <Input getTitles={this.getTitles} submitSearch={this.submitSearch} />
                 <Suggestions searchResults={this.state.searchResults} />
+                <Results submit={this.state.submit} searchResults={this.state.searchResults} />
+                <Article article={this.state.article} />
             </div>
         )
     }
