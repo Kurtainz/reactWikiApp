@@ -44,7 +44,7 @@ const Suggestions = (props) => {
 
 const Results = (props) => {
 
-    if (props.submit) {
+    if (props.submit && props.searchResults) {
         return(
             <div>
                 {props.searchResults.map((result) => {
@@ -80,6 +80,7 @@ class Wiki extends React.Component {
         searchResults : [],
         requestTime : 0,
         submit : false,
+        submitResults : [],
         article : ''
     }
 
@@ -118,15 +119,17 @@ class Wiki extends React.Component {
         }
     }
 
-    // onChange = (input) => {
-    
-    // }
-
     submitSearch = (input) => {
         this.setState(prevState => ({
             submit : true
         }), () => {
-            this.getTitles(input);
+            $.when(this.getTitles(input)).then(() => {
+                if (this.state.searchResults.length > 0) {
+                    this.setState(prevState => ({
+                        submitResults : this.state.searchResults
+                    }))
+                }
+            })
         })
     }
 
@@ -155,15 +158,20 @@ class Wiki extends React.Component {
         const characters = {
             " " : '%20',
             '"' : '%22',
-            '%' : '%25',
             '-' : '%2D',
             '.' : '%2E',
         };
-        let newString = Object.keys(characters).forEach((key) => {
-            let regEx = new RegExp(key, 'g');
-            let str = str.replace(regEx, characters.key);
-            return str;
-        });
+        let newString = string;
+        Object.keys(characters).forEach((character) => {
+            let regEx;
+            if (character === '.') {
+                regEx = new RegExp(/\./, 'g');
+            }
+            else {
+                regEx = new RegExp(character, 'g');
+            }
+            newString = newString.replace(regEx, characters[character]);
+        })
         return newString;
     }
 
@@ -171,8 +179,8 @@ class Wiki extends React.Component {
         return(
             <div>
                 <Input getTitles={this.getTitles} submitSearch={this.submitSearch} />
-                <Suggestions searchResults={this.state.searchResults} />
-                <Results submit={this.state.submit} searchResults={this.state.searchResults} />
+                <Suggestions searchResults={this.state.searchResults} submitSearch={this.submitSearch} />
+                <Results submit={this.state.submit} searchResults={this.state.submitResults} removeCharacters={this.removeCharacters} />
                 <Article article={this.state.article} />
             </div>
         )
