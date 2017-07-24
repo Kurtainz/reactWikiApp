@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import $ from "jquery";
+import './styles.css';
 
 class Input extends React.Component {
     
@@ -9,23 +10,44 @@ class Input extends React.Component {
     }
 
     handleInput = this.handleInput.bind(this);
+    handleClick = this.handleClick.bind(this);
     handleSubmit = this.handleSubmit.bind(this);
 
     handleInput(event) {
         this.props.getTitles(event.target.value);
     }
 
-    handleSubmit(event) {
-        event.preventDefault();
+    handleClick(event) {
+        this.input.value = event;
         this.props.submitSearch(this.input.value);
     }
 
+    handleSubmit(event) {
+        event.preventDefault();
+        if (this.input.value) {
+            this.props.submitSearch(this.input.value);
+        }
+    }
+
     render() {
+        let suggestions = null;
+        if (this.props.suggest) {
+            suggestions = <Suggestions searchResults={this.props.searchResults} handleClick={this.handleClick} />;
+        }
+        let submitStyle = null;
+        if (this.props.submitResults.length > 0) {
+            submitStyle = {
+                'top' : '5%'
+            }
+        }
         return(
-            <form onSubmit={this.handleSubmit}>
-                <input type='text' ref={(input) => this.input = input} onInput={this.handleInput} placeholder="Search"></input>
-                <input type='submit' value='Submit'></input>
-            </form>
+            <div className='search' style={submitStyle}>
+                <form onSubmit={this.handleSubmit}>
+                    <input type='text' ref={(input) => this.input = input} onInput={this.handleInput} placeholder="Search"></input>
+                    <input type='submit' value='Submit'></input>
+                </form>
+                {suggestions}
+            </div>
         );
     }
     
@@ -34,9 +56,9 @@ class Input extends React.Component {
 const Suggestions = (props) => {
 
     return(
-        <div>
-            <ul>
-                {props.searchResults.map((result) => <li>{result.title}</li>)}
+        <div className='suggestionsDiv'>
+            <ul className='suggestions'>
+                {props.searchResults.map((result) => <li onClick={() => props.handleClick(result.title)}>{result.title}</li>)}
             </ul>
         </div>
     )
@@ -44,14 +66,14 @@ const Suggestions = (props) => {
 
 const Results = (props) => {
 
-    if (props.submit && props.searchResults) {
+    if (props.submitResults) {
         return(
-            <div>
-                {props.searchResults.map((result) => {
+            <div className='results'>
+                {props.submitResults.map((result) => {
                         const url = "http://www.wikipedia.org/wiki/" + result.title;
-                        return <a href={url} target='_blank'>
-                            <div>
-                                <h1>{result.title}</h1>
+                        return <a href={url} target='_blank' className='result'>
+                            <div className='resultBlock'>
+                                <h2>{result.title}</h2>
                                 <p dangerouslySetInnerHTML={{__html: result.snippet}}></p>
                             </div>
                         </a>
@@ -78,9 +100,10 @@ class Wiki extends React.Component {
 
     state = {
         searchResults : [],
-        requestTime : 0,
-        submit : false,
         submitResults : [],
+        requestTime : 0,
+        suggest : false,
+        submit : false,
         article : ''
     }
 
@@ -88,6 +111,11 @@ class Wiki extends React.Component {
     getTitles = (input) => {
         let time = Date.now();
         if (input) {
+            if (!this.state.suggest) {
+                this.setState(prevState => ({
+                    suggest : true
+                }))
+            }
             $.ajax({
 
                 'url': 'https://en.wikipedia.org/w/api.php',
@@ -101,36 +129,47 @@ class Wiki extends React.Component {
                 },
                 'success' : (data) => {
                     if (time > this.state.requestTime) {
+                        console.log(input);
                         this.setState(prevState => ({
                         searchResults : data.query.search,
                         requestTime : time
                     }))
                     }
-                }
+                    if (this.state.submit === true) {
+                        this.setState(prevState => ({
+                            submitResults : data.query.search,
+                            submit : false
+                        }))
+                    }
+                },
+                'error' : (xhr) => console.log('Error occured' + xhr)
             });
         }
         else {
             if (time > this.state.requestTime) {
-                this.state = {
+                this.setState(prevState => ({
                     searchResults : [],
-                    requestTime : 0
-                }
+                    suggest : false
+                }))
             }
         }
     }
 
+    // submitSearch = (input) => {
+    //     $.when(this.getTitles(input)).done(() => {
+    //         this.setState(prevState => ({
+    //             submitResults : this.state.searchResults,
+    //             suggest : false,
+    //             submit : true
+    //         }), () => console.log(this.state))
+    //     })
+    // }
+
     submitSearch = (input) => {
         this.setState(prevState => ({
+            suggest : false,
             submit : true
-        }), () => {
-            $.when(this.getTitles(input)).then(() => {
-                if (this.state.searchResults.length > 0) {
-                    this.setState(prevState => ({
-                        submitResults : this.state.searchResults
-                    }))
-                }
-            })
-        })
+        }), this.getTitles(input))
     }
 
     // getArticle = (input) => {
@@ -178,9 +217,14 @@ class Wiki extends React.Component {
     render() {
         return(
             <div>
-                <Input getTitles={this.getTitles} submitSearch={this.submitSearch} />
-                <Suggestions searchResults={this.state.searchResults} submitSearch={this.submitSearch} />
-                <Results submit={this.state.submit} searchResults={this.state.submitResults} removeCharacters={this.removeCharacters} />
+                <Input 
+                getTitles={this.getTitles} 
+                submitSearch={this.submitSearch} 
+                searchResults={this.state.searchResults} 
+                suggest={this.state.suggest}
+                submitResults={this.state.submitResults} />
+                {/* <Suggestions searchResults={this.state.searchResults} submitSearch={this.submitSearch} /> */}
+                 <Results submit={this.state.submit} submitResults={this.state.submitResults} removeCharacters={this.removeCharacters} /> 
                 <Article article={this.state.article} />
             </div>
         )
