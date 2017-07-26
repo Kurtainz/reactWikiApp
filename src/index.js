@@ -118,7 +118,7 @@ class Wiki extends React.Component {
         submit : false,
     }
 
-    // Gets list of articles for search suggestions
+    // Gets list of articles for search suggestions or results
     getTitles = (input) => {
         let time = Date.now();
         if (input) {
@@ -172,48 +172,6 @@ class Wiki extends React.Component {
         }), this.getTitles(input))
     }
 
-    // getArticle = (input) => {
-    //     if (input) {
-    //         $.ajax({
-    //             'url' : 'https://en.wikipedia.org/w/api.php',
-    //             'data' : {
-    //                 'action' : 'query',
-    //                 'format' : 'json',
-    //                 'origin' : '*',
-    //                 'titles' : input,
-    //                 'prop' : 'revisions',
-    //                 'rvprop' : 'content'
-    //             },
-    //             'success' : (data) => {
-    //                 this.setState(prevState => ({
-    //                     article : data.query.pages[Object.keys(data.query.pages)[0]].revisions[0]['*']
-    //                 }))
-    //             }
-    //         })
-    //     }
-    // }
-
-    removeCharacters = (string) => {
-        const characters = {
-            " " : '%20',
-            '"' : '%22',
-            '-' : '%2D',
-            '.' : '%2E',
-        };
-        let newString = string;
-        Object.keys(characters).forEach((character) => {
-            let regEx;
-            if (character === '.') {
-                regEx = new RegExp(/\./, 'g');
-            }
-            else {
-                regEx = new RegExp(character, 'g');
-            }
-            newString = newString.replace(regEx, characters[character]);
-        })
-        return newString;
-    }
-
     render() {
         return(
             <div>
@@ -224,7 +182,6 @@ class Wiki extends React.Component {
                 searchResults={this.state.searchResults} 
                 suggest={this.state.suggest}
                 submitResults={this.state.submitResults} />
-                {/* <Suggestions searchResults={this.state.searchResults} submitSearch={this.submitSearch} /> */}
                  <Results submit={this.state.submit} submitResults={this.state.submitResults} removeCharacters={this.removeCharacters} /> 
                 <Article article={this.state.article} />
             </div>
