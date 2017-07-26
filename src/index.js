@@ -1,13 +1,22 @@
-import React, { Component } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import $ from "jquery";
 import './styles.css';
 
-class Input extends React.Component {
-    
-    state = {
-        value : ''
+const Header = (props) => {
+
+    if (!props.hide) {
+        return(
+            <h1>Wikipedia Search</h1>
+        )
     }
+    else {
+        return null;
+    }
+
+}
+
+class Input extends React.Component {
 
     handleInput = this.handleInput.bind(this);
     handleClick = this.handleClick.bind(this);
@@ -44,7 +53,6 @@ class Input extends React.Component {
             <div className='search' style={submitStyle}>
                 <form onSubmit={this.handleSubmit}>
                     <input type='text' ref={(input) => this.input = input} onInput={this.handleInput} placeholder="Search"></input>
-                    <input type='submit' value='Submit'></input>
                 </form>
                 {suggestions}
             </div>
@@ -58,7 +66,11 @@ const Suggestions = (props) => {
     return(
         <div className='suggestionsDiv'>
             <ul className='suggestions'>
-                {props.searchResults.map((result) => <li onClick={() => props.handleClick(result.title)}>{result.title}</li>)}
+                {props.searchResults.map((result, index) => <li 
+                key={index}
+                className='suggestion' 
+                onClick={() => props.handleClick(result.title)}>
+                {result.title}</li>)}
             </ul>
         </div>
     )
@@ -70,7 +82,7 @@ const Results = (props) => {
         return(
             <div className='results'>
                 {props.submitResults.map((result) => {
-                        const url = "http://www.wikipedia.org/wiki/" + result.title;
+                        const url = "http://en.wikipedia.org/wiki/" + result.title;
                         return <a href={url} target='_blank' className='result'>
                             <div className='resultBlock'>
                                 <h2>{result.title}</h2>
@@ -104,7 +116,6 @@ class Wiki extends React.Component {
         requestTime : 0,
         suggest : false,
         submit : false,
-        article : ''
     }
 
     // Gets list of articles for search suggestions
@@ -129,7 +140,6 @@ class Wiki extends React.Component {
                 },
                 'success' : (data) => {
                     if (time > this.state.requestTime) {
-                        console.log(input);
                         this.setState(prevState => ({
                         searchResults : data.query.search,
                         requestTime : time
@@ -154,16 +164,6 @@ class Wiki extends React.Component {
             }
         }
     }
-
-    // submitSearch = (input) => {
-    //     $.when(this.getTitles(input)).done(() => {
-    //         this.setState(prevState => ({
-    //             submitResults : this.state.searchResults,
-    //             suggest : false,
-    //             submit : true
-    //         }), () => console.log(this.state))
-    //     })
-    // }
 
     submitSearch = (input) => {
         this.setState(prevState => ({
@@ -217,6 +217,7 @@ class Wiki extends React.Component {
     render() {
         return(
             <div>
+                <Header hide={this.state.submitResults.length} />
                 <Input 
                 getTitles={this.getTitles} 
                 submitSearch={this.submitSearch} 

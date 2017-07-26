@@ -8,6 +8,19 @@ body {
     background-color: #4d4dd4;
 }
 
+h1 {
+    text-align: center;
+    font-size: 3em;
+    font-weight: 600;
+    letter-spacing: 10px;
+}
+
+form {
+    margin: 0 auto;
+    text-align: start;
+    width: 80%;
+}
+
 .search {
     position: absolute;
     top: 45%;
@@ -15,6 +28,7 @@ body {
     transform: translate(-50%, -50%);
     width: 100%;
     text-align: center;
+    transition: top 0.5s ease-out;
 }
 
 .submit {
@@ -29,18 +43,51 @@ body {
 
 .suggestions {
     list-style: none;
-    position: absolute;
     font-size: 25px;
-    margin: 0;
+    margin: 0 auto;
     padding: 0;
-    width: 450px;
-    left: 32%;
-    top: 5%;
+    width: 80%;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.suggestion {
+    background-color: #6363b3;
+    border-radius: 1em;
+    margin-bottom: 4px;
 }
 
 input[type=text] {
-    width: 30%;
-    height: 30px;
+    width: 100%;
+    border: 2px solid #c14bbe;
+    height: 40px;
+    border-radius: 1em;
+    padding: 3px;
+    font-size: 1.6em;
+}
+
+input[type=submit] {
+    display: inline-block;
+    border: none;
+    color: #FFFFFF;
+    border-radius: 1em;
+    -webkit-border-radius: 1em;
+    -moz-border-radius: 1em;
+    font-family: Verdana;
+    width: auto;
+    font-size: 16px;
+    padding: 10px 40px;
+    text-shadow: 0 1px 0 #FFFFFF;
+    background-color: #3F19FC;
+    height: 50px;
+    margin-left: 5px;
+    border-radius: 2em;
+}
+
+input[type=submit]:hover, input[type=submit]:active {
+    border: none;
+    color: #FFFFFF;
+    background-color: #265FFC;
 }
 
 .results {
@@ -60,8 +107,35 @@ input[type=text] {
     padding: 5px 0 0 15px;
     margin-bottom: 20px;
     border-radius: 1em;
+    overflow: hidden;
+}
+
+.resultBlock:hover {
+    background-color: #ceecec;
 }
 
 h2 {
-    font-size: 1.7em;
+    font-size: 1.5em;
+}
+
+@media screen and (min-width: 900px) {
+
+    h2 {
+        font-size: 1.7em;
+    }
+
+    form {
+        margin-left: 35%;
+        text-align: start;
+        width: 30vw;
+    }
+
+    .suggestions {
+        width: 30.5%;
+        position: absolute;
+        top: 1%;
+        left: 35%;
+        width: 30.5%;
+    }
+
 }
