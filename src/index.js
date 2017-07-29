@@ -23,18 +23,20 @@ class Input extends React.Component {
     handleSubmit = this.handleSubmit.bind(this);
 
     handleInput(event) {
-        this.props.getTitles(event.target.value);
+        this.props.handleData(event.target.value);
     }
 
     handleClick(event) {
         this.input.value = event;
-        this.props.submitSearch(this.input.value);
+        const option = this.input.form.children[1].value;
+        this.props.submitSearch(this.input.value, option);
     }
 
     handleSubmit(event) {
         event.preventDefault();
+        const option = this.input.form.children[1].value;
         if (this.input.value) {
-            this.props.submitSearch(this.input.value);
+            this.props.submitSearch(this.input.value, option);
         }
     }
 
@@ -53,6 +55,7 @@ class Input extends React.Component {
             <div className='search' style={submitStyle}>
                 <form onSubmit={this.handleSubmit}>
                     <input type='text' ref={(input) => this.input = input} onInput={this.handleInput} placeholder="Search"></input>
+                    <Options />
                 </form>
                 {suggestions}
             </div>
@@ -61,6 +64,19 @@ class Input extends React.Component {
     
 }
 
+// Select box for images or articles
+const Options = () => {
+
+    return(
+        <select>
+            <option value='articles'>Articles</option>
+            <option value='images'>Images</option>
+        </select>
+    )
+
+}
+
+// Displays search suggestions underneath box
 const Suggestions = (props) => {
 
     return(
@@ -76,19 +92,33 @@ const Suggestions = (props) => {
     )
 };
 
+// Displays results of search, either images or articles
 const Results = (props) => {
 
-    if (props.submitResults) {
+    // Displays article results
+    if (props.submitResults.length > 0) {
         return(
             <div className='results'>
-                {props.submitResults.map((result) => {
+                {props.submitResults.map((result, index) => {
                         const url = "http://en.wikipedia.org/wiki/" + result.title;
-                        return <a href={url} target='_blank' className='result'>
+                        return <a href={url} target='_blank' className='result' key={index}>
                             <div className='resultBlock'>
                                 <h2>{result.title}</h2>
                                 <p dangerouslySetInnerHTML={{__html: result.snippet}}></p>
                             </div>
                         </a>
+                })}
+            </div>
+        )
+    }
+    // Displays picture results
+    else if (props.picResults.length > 0) {
+        return(
+            <div>
+                {props.picResults.map((pic, index) => {
+                        return <div key={index}>
+                            <img src={pic} />
+                        </div>
                 })}
             </div>
         )
@@ -99,6 +129,7 @@ const Results = (props) => {
 
 }
 
+// Not yet implemented. May use to display more information on a particular search result
 const Article = (props) => {
 
     return(
@@ -113,49 +144,43 @@ class Wiki extends React.Component {
     state = {
         searchResults : [],
         submitResults : [],
+        picResults : [],
         requestTime : 0,
         suggest : false,
         submit : false,
     }
 
+    submitSearch = (input, option) => {
+        this.setState(prevState => ({
+            suggest : false,
+            submit : true
+        }), this.handleData(input, option))
+    }
+
     // Gets list of articles for search suggestions or results
-    getTitles = (input) => {
+    handleData = (input, option) => {
+        // Each call has a time variable which is compared with state variable to ensure that only the most 
+        // recent API call will change state
         let time = Date.now();
         if (input) {
+            // If suggest variable is not true, enable it to show search suggestions
             if (!this.state.suggest) {
                 this.setState(prevState => ({
                     suggest : true
                 }))
             }
-            $.ajax({
-
-                'url': 'https://en.wikipedia.org/w/api.php',
-                'data': {
-                    'action' : 'query',
-                    'format' : 'json',
-                    'origin' : '*',
-                    'list' : 'search',
-                    'srsearch' : input,
-                    'limit' : 20
-                },
-                'success' : (data) => {
-                    if (time > this.state.requestTime) {
-                        this.setState(prevState => ({
-                        searchResults : data.query.search,
-                        requestTime : time
-                    }))
-                    }
-                    if (this.state.submit === true) {
-                        this.setState(prevState => ({
-                            submitResults : data.query.search,
-                            submit : false
-                        }))
-                    }
-                },
-                'error' : (xhr) => console.log('Error occured' + xhr)
-            });
+            if (option === 'articles') {
+                this.getTitles(input, time);
+            }
+            else if (option === 'images') {
+                this.getImages(input);
+            }
+            else {
+                this.getTitles(input, time);
+            }
         }
         else {
+            // Hide suggestions and empty results if no input
             if (time > this.state.requestTime) {
                 this.setState(prevState => ({
                     searchResults : [],
@@ -165,11 +190,54 @@ class Wiki extends React.Component {
         }
     }
 
-    submitSearch = (input) => {
-        this.setState(prevState => ({
-            suggest : false,
-            submit : true
-        }), this.getTitles(input))
+    getTitles = (input, time) => {
+        $.ajax({
+            'url': 'https://en.wikipedia.org/w/api.php',
+            'data': {
+                'action' : 'query',
+                'format' : 'json',
+                'origin' : '*',
+                'list' : 'search',
+                'srsearch' : input,
+                'limit' : 20
+            },
+            'success' : (data) => {
+                if (time > this.state.requestTime) {
+                    this.setState(prevState => ({
+                    searchResults : data.query.search,
+                    requestTime : time
+                }))
+                }
+                if (this.state.submit === true) {
+                    this.setState(prevState => ({
+                        submitResults : data.query.search,
+                        submit : false
+                    }))
+                }
+            },
+        });
+    }
+
+    getImages = (input) => {
+        $.ajax({
+            'url' : 'https://en.wikipedia.org/w/api.php',
+            'data' : {
+                'action' : 'query',
+                'format' : 'json',
+                'origin' : '*',
+                'list' : 'allimages',
+                'ailimit' : 20,
+                'aifrom' : input
+            },
+            'success' : (data) => {
+                const imageArray = data.query.allimages.map((obj) => obj.url);
+                this.setState(prevState => ({
+                    submitResults : [],
+                    picResults : imageArray,
+                    submit : false
+                }))
+            }
+        })
     }
 
     render() {
@@ -177,12 +245,16 @@ class Wiki extends React.Component {
             <div>
                 <Header hide={this.state.submitResults.length} />
                 <Input 
-                getTitles={this.getTitles} 
+                handleData={this.handleData} 
                 submitSearch={this.submitSearch} 
                 searchResults={this.state.searchResults} 
                 suggest={this.state.suggest}
                 submitResults={this.state.submitResults} />
-                 <Results submit={this.state.submit} submitResults={this.state.submitResults} removeCharacters={this.removeCharacters} /> 
+                 <Results 
+                 submit={this.state.submit} 
+                 submitResults={this.state.submitResults} 
+                 removeCharacters={this.removeCharacters}
+                 picResults={this.state.picResults} /> 
                 <Article article={this.state.article} />
             </div>
         )
