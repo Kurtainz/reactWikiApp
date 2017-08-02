@@ -32,8 +32,8 @@ form {
     transition: top 0.5s ease-out;
 }
 
-.submit {
-    top: 5%;
+select {
+    margin-left: 10px;
 }
 
 .suggestionsDiv {
@@ -59,7 +59,6 @@ form {
 }
 
 input[type=text] {
-    width: 100%;
     border: 2px solid #c14bbe;
     height: 40px;
     border-radius: 1em;
@@ -72,6 +71,20 @@ input[type=text] {
     width: 80%;
     margin: 0 auto;
     padding-top: 80px;
+}
+
+.picResults {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    width: 90%;
+    margin: 0 auto;
+    padding-top: 80px;
+}
+
+img {
+    max-width: 500px;
+    max-height: 200px;
 }
 
 .result {
@@ -107,7 +120,11 @@ h2 {
     form {
         margin-left: 35%;
         text-align: start;
-        width: 30vw;
+        width: 40vw;
+    }
+
+    input[type=text] {
+        width: 65%;
     }
 
     .suggestions {

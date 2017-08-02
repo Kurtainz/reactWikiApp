@@ -18,6 +18,18 @@ const Header = (props) => {
 
 class Input extends React.Component {
 
+    state = {
+        random : ''
+    }
+
+    componentWillMount() {
+        this.props.getRandomArticle.then((answer) => {
+            this.setState(prevState => ({
+                random : answer.query.random['0'].title
+            }), console.log(this.state))
+        })
+    }
+
     handleInput = this.handleInput.bind(this);
     handleClick = this.handleClick.bind(this);
     handleSubmit = this.handleSubmit.bind(this);
@@ -46,7 +58,7 @@ class Input extends React.Component {
             suggestions = <Suggestions searchResults={this.props.searchResults} handleClick={this.handleClick} />;
         }
         let submitStyle = null;
-        if (this.props.submitResults.length > 0) {
+        if (this.props.hide) {
             submitStyle = {
                 'top' : '5%'
             }
@@ -57,6 +69,7 @@ class Input extends React.Component {
                     <input type='text' ref={(input) => this.input = input} onInput={this.handleInput} placeholder="Search"></input>
                     <Options />
                 </form>
+                <RandomButton random={this.state.random} />
                 {suggestions}
             </div>
         );
@@ -73,6 +86,21 @@ const Options = () => {
             <option value='images'>Images</option>
         </select>
     )
+
+}
+
+const RandomButton = (props) => {
+
+    if (props.random) {
+        return(
+            <a href={'http://en.wikipedia.org/wiki/' + props.random}>
+                <button>Random</button>
+            </a>
+        )
+    }
+    else {
+        return null;
+    }
 
 }
 
@@ -114,7 +142,7 @@ const Results = (props) => {
     // Displays picture results
     else if (props.picResults.length > 0) {
         return(
-            <div>
+            <div className='picResults'>
                 {props.picResults.map((pic, index) => {
                         return <div key={index}>
                             <img src={pic} />
@@ -129,16 +157,6 @@ const Results = (props) => {
 
 }
 
-// Not yet implemented. May use to display more information on a particular search result
-const Article = (props) => {
-
-    return(
-        <div dangerouslySetInnerHTML={{__html : props.article}} />
-    )
-
-}
-
-
 class Wiki extends React.Component {
 
     state = {
@@ -148,12 +166,44 @@ class Wiki extends React.Component {
         requestTime : 0,
         suggest : false,
         submit : false,
+        hide : false
     }
+
+    // getRandomArticle = () => {
+    //     $.ajax({
+    //         'url': 'https://en.wikipedia.org/w/api.php',
+    //         'data': {
+    //             'action' : 'query',
+    //             'format' : 'json',
+    //             'origin' : '*',
+    //             'list' : 'random'
+    //         },
+    //         'success' : (data) => {
+    //             console.log(data.query.random);
+    //             data.query.random[0].title
+    //         }
+    //     })
+    // }
+
+    getRandomArticle = new Promise(
+        (resolve, reject) => {
+            $.ajax({
+                'url': 'https://en.wikipedia.org/w/api.php',
+                'data': {
+                    'action' : 'query',
+                    'format' : 'json',
+                    'origin' : '*',
+                    'list' : 'random'
+                },
+            }).done((data) => resolve(data))
+        }
+    )
 
     submitSearch = (input, option) => {
         this.setState(prevState => ({
             suggest : false,
-            submit : true
+            submit : true,
+            hide : true
         }), this.handleData(input, option))
     }
 
@@ -199,7 +249,6 @@ class Wiki extends React.Component {
                 'origin' : '*',
                 'list' : 'search',
                 'srsearch' : input,
-                'limit' : 20
             },
             'success' : (data) => {
                 if (time > this.state.requestTime) {
@@ -243,19 +292,20 @@ class Wiki extends React.Component {
     render() {
         return(
             <div>
-                <Header hide={this.state.submitResults.length} />
+                <Header hide={this.state.hide} />
                 <Input 
+                getRandomArticle={this.getRandomArticle}
                 handleData={this.handleData} 
                 submitSearch={this.submitSearch} 
                 searchResults={this.state.searchResults} 
                 suggest={this.state.suggest}
-                submitResults={this.state.submitResults} />
+                submitResults={this.state.submitResults}
+                hide={this.state.hide} />
                  <Results 
                  submit={this.state.submit} 
                  submitResults={this.state.submitResults} 
                  removeCharacters={this.removeCharacters}
                  picResults={this.state.picResults} /> 
-                <Article article={this.state.article} />
             </div>
         )
     }
