@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import $ from "jquery";
 import './styles.css';
 
+// Main header. Hides when search has been made
 const Header = (props) => {
 
     if (!props.hide) {
@@ -16,12 +17,14 @@ const Header = (props) => {
 
 }
 
+// Main input component. Contains input box, search type and random button
 class Input extends React.Component {
 
     state = {
         random : ''
     }
 
+    // Gets random article for random button
     componentWillMount() {
         this.props.getRandomArticle.then((answer) => {
             this.setState(prevState => ({
@@ -53,10 +56,12 @@ class Input extends React.Component {
     }
 
     render() {
+        // Makes search suggestions appear if text in box
         let suggestions = null;
         if (this.props.suggest) {
             suggestions = <Suggestions searchResults={this.props.searchResults} handleClick={this.handleClick} />;
         }
+        // Moves search bar to top of screen if search has been made
         let submitStyle = null;
         if (this.props.hide) {
             submitStyle = {
@@ -69,7 +74,9 @@ class Input extends React.Component {
                     <input type='text' ref={(input) => this.input = input} onInput={this.handleInput} placeholder="Search"></input>
                     <Options />
                 </form>
-                <RandomButton random={this.state.random} />
+                <div>
+                    <RandomButton random={this.state.random} />
+                </div>
                 {suggestions}
             </div>
         );
@@ -81,7 +88,7 @@ class Input extends React.Component {
 const Options = () => {
 
     return(
-        <select>
+        <select className='button'>
             <option value='articles'>Articles</option>
             <option value='images'>Images</option>
         </select>
@@ -93,9 +100,12 @@ const RandomButton = (props) => {
 
     if (props.random) {
         return(
-            <a href={'http://en.wikipedia.org/wiki/' + props.random}>
-                <button>Random</button>
-            </a>
+            <div className='randomButton'>
+                <p className='randomText'>Feeling lucky? Try a random article</p>
+                <a href={'http://en.wikipedia.org/wiki/' + props.random}>
+                    <button className='button'>Random</button>
+                </a>
+            </div>
         )
     }
     else {
@@ -169,22 +179,6 @@ class Wiki extends React.Component {
         hide : false
     }
 
-    // getRandomArticle = () => {
-    //     $.ajax({
-    //         'url': 'https://en.wikipedia.org/w/api.php',
-    //         'data': {
-    //             'action' : 'query',
-    //             'format' : 'json',
-    //             'origin' : '*',
-    //             'list' : 'random'
-    //         },
-    //         'success' : (data) => {
-    //             console.log(data.query.random);
-    //             data.query.random[0].title
-    //         }
-    //     })
-    // }
-
     getRandomArticle = new Promise(
         (resolve, reject) => {
             $.ajax({
@@ -193,9 +187,12 @@ class Wiki extends React.Component {
                     'action' : 'query',
                     'format' : 'json',
                     'origin' : '*',
-                    'list' : 'random'
+                    'list' : 'random',
+                    'rnnamespace' : 0
                 },
-            }).done((data) => resolve(data))
+            }).done((data) => {
+                resolve(data);
+            })
         }
     )
 
